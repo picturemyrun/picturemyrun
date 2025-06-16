@@ -1,0 +1,2046 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Picture My Run</title>
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .app-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: 400px 1fr;
+        gap: 30px;
+        height: calc(100vh - 40px);
+      }
+
+      .controls-panel {
+        background: white;
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        overflow-y: auto;
+        overflow-x: visible;
+        position: relative;
+      }
+
+      .preview-panel {
+        background: white;
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .section {
+        margin-bottom: 32px;
+      }
+
+      .section-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 16px;
+        border-bottom: 2px solid #f3f4f6;
+        padding-bottom: 8px;
+      }
+
+      .form-group {
+        margin-bottom: 16px;
+      }
+
+      .color-picker-group {
+        overflow: visible;
+        position: relative;
+        z-index: 100;
+      }
+
+      .form-label {
+        display: block;
+        font-size: 14px;
+        font-weight: 500;
+        color: #374151;
+        margin-bottom: 6px;
+      }
+
+      .form-input {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: border-color 0.2s;
+      }
+
+      .form-input:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      }
+
+      .splits-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 16px;
+      }
+
+      .splits-table th,
+      .splits-table td {
+        padding: 8px 12px;
+        text-align: left;
+        border-bottom: 1px solid #e5e7eb;
+      }
+
+      .splits-table th {
+        background: #f9fafb;
+        font-weight: 600;
+        color: #374151;
+      }
+
+      .splits-table input {
+        width: 100%;
+        padding: 4px 8px;
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+        font-size: 14px;
+      }
+
+      .btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .btn-primary {
+        background: #3b82f6;
+        color: white;
+      }
+
+      .btn-primary:hover {
+        background: #2563eb;
+      }
+
+      .btn-secondary {
+        background: #6b7280;
+        color: white;
+      }
+
+      .btn-secondary:hover {
+        background: #4b5563;
+      }
+
+      .btn-danger {
+        background: #ef4444;
+        color: white;
+      }
+
+      .btn-danger:hover {
+        background: #dc2626;
+      }
+
+      .btn-group {
+        display: flex;
+        gap: 8px;
+        margin-top: 16px;
+      }
+
+      .btn-glass {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: white;
+        border-radius: 12px;
+        padding: 10px 20px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      .btn-glass:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+      }
+
+      .btn-glass:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .btn-danger-glass {
+        background: rgba(239, 68, 68, 0.2);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        color: #ef4444;
+      }
+
+      .btn-danger-glass:hover {
+        background: rgba(239, 68, 68, 0.3);
+        color: white;
+      }
+
+      /* Visualization Styles */
+      .viz-container {
+        background: linear-gradient(135deg, #f87171 0%, #dc2626 100%);
+        border-radius: 20px;
+        padding: 40px;
+        width: 600px;
+        height: 400px;
+        position: relative;
+      }
+
+      .viz-card {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(20px);
+        border-radius: 16px;
+        padding: 32px;
+        height: 100%;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        position: relative;
+      }
+
+      .viz-header-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 12px;
+      }
+
+      .viz-title-group {
+        flex: 1;
+      }
+
+      .viz-title {
+        color: white;
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 6px;
+        line-height: 1.1;
+      }
+
+      .viz-subtitle {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 14px;
+        margin-bottom: 0;
+      }
+
+      .viz-badge {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        padding: 6px 12px;
+        border-radius: 16px;
+        font-size: 12px;
+        font-weight: 600;
+        margin-top: 2px;
+      }
+
+      .viz-progress-section {
+        margin-bottom: 24px;
+      }
+
+      .viz-progress-bar {
+        width: 100%;
+        height: 3px;
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 2px;
+        margin-bottom: 6px;
+        overflow: hidden;
+      }
+
+      .viz-progress-fill {
+        height: 100%;
+        background: white;
+        border-radius: 2px;
+        width: 100%;
+      }
+
+      .viz-week-label {
+        text-align: right;
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .viz-splits-container {
+        display: flex;
+        justify-content: flex-start;
+        align-items: end;
+        gap: 2px;
+        margin-bottom: 20px;
+        height: 120px;
+        width: 100%;
+        min-width: 300px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      .viz-split-bar {
+        width: 20px;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 4px;
+        min-height: 20px;
+        position: relative;
+      }
+
+      .viz-split-number {
+        position: absolute;
+        bottom: -18px;
+        left: 50%;
+        transform: translateX(-50%);
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 10px;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+
+      .viz-stats {
+        display: flex;
+        justify-content: center;
+        gap: 32px;
+        color: white;
+        font-size: 11px;
+        font-weight: 600;
+      }
+
+      .viz-stat-item {
+        text-align: center;
+      }
+
+      .viz-stat-item[style*='display: none'] {
+        display: none !important;
+      }
+
+      /* Excalidraw-style color picker */
+      .color-picker {
+        display: flex;
+        gap: 8px;
+        margin-top: 8px;
+        align-items: center;
+      }
+
+      .color-option {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        cursor: pointer;
+        border: 2px solid transparent;
+        transition: all 0.2s ease;
+        position: relative;
+      }
+
+      .color-option:hover {
+        transform: scale(1.1);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      }
+
+      .color-option.active {
+        border-color: #374151;
+        box-shadow: 0 0 0 1px #374151;
+      }
+
+      .color-option.active::after {
+        content: '';
+      }
+
+      .color-separator {
+        width: 1px;
+        height: 20px;
+        background: #e5e7eb;
+        margin: 0 4px;
+      }
+
+      .custom-option {
+        background: #ffffff;
+        border: 2px solid #e5e7eb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: visible;
+        position: relative;
+      }
+
+      .custom-option::after {
+        content: '';
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        right: 2px;
+        bottom: 2px;
+        background:
+          linear-gradient(
+            45deg,
+            transparent 46%,
+            #e5e7eb 46%,
+            #e5e7eb 54%,
+            transparent 54%
+          ),
+          linear-gradient(
+            -45deg,
+            transparent 46%,
+            #e5e7eb 46%,
+            #e5e7eb 54%,
+            transparent 54%
+          );
+        z-index: 0;
+        border-radius: 6px;
+      }
+
+      .custom-option:hover {
+        border-color: #d1d5db;
+        transform: scale(1.1);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      }
+
+      .custom-option.active {
+        border-color: #374151;
+        box-shadow: 0 0 0 1px #374151;
+      }
+
+      .custom-option.active::after {
+        content: '';
+      }
+
+      .custom-color-icon {
+        font-size: 16px;
+        font-weight: bold;
+        color: #9ca3af;
+        pointer-events: none;
+        z-index: 1;
+        position: relative;
+      }
+
+      .custom-option.active .custom-color-icon {
+        display: none;
+      }
+
+      /* Fullscreen Modal */
+      .fullscreen-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: linear-gradient(135deg, #f87171 0%, #dc2626 100%);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .fullscreen-modal.active {
+        display: flex;
+      }
+
+      .fullscreen-viz {
+        width: 100vw;
+        height: 100vh;
+        position: relative;
+      }
+
+      .fullscreen-viz .viz-container {
+        width: 100%;
+        height: 100%;
+      }
+
+      .fullscreen-viz .viz-card {
+        padding: 60px;
+      }
+
+      .fullscreen-viz .viz-title {
+        font-size: 48px;
+        margin-bottom: 12px;
+      }
+
+      .fullscreen-viz .viz-subtitle {
+        font-size: 24px;
+        margin-bottom: 0;
+      }
+
+      .fullscreen-viz .viz-badge {
+        font-size: 20px;
+        padding: 12px 24px;
+        border-radius: 24px;
+      }
+
+      .fullscreen-viz .viz-progress-bar {
+        height: 6px;
+        margin-bottom: 12px;
+      }
+
+      .fullscreen-viz .viz-week-label {
+        font-size: 18px;
+      }
+
+      .fullscreen-viz .viz-splits-container {
+        height: 300px;
+        margin-bottom: 40px;
+        min-width: 600px;
+        gap: 12px !important;
+      }
+
+      .fullscreen-viz .viz-split-bar {
+        min-width: 30px;
+      }
+
+      .fullscreen-viz .viz-stat-value {
+        font-size: 32px;
+        margin-bottom: 8px;
+      }
+
+      .fullscreen-viz .viz-stats {
+        font-size: 18px;
+        gap: 60px;
+      }
+
+      .fullscreen-close {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        width: 40px;
+        height: 40px;
+        border-radius: 20px;
+        font-size: 20px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s;
+      }
+
+      .fullscreen-close:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+
+      .fullscreen-instructions {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 14px;
+        text-align: center;
+      }
+
+      .viz-stat-value {
+        font-size: 16px;
+        font-weight: 700;
+        margin-bottom: 2px;
+      }
+
+      .viz-gray {
+        color: rgba(255, 255, 255, 0.8);
+      }
+
+      /* Highlight animations for focused elements */
+      .highlight-pulse {
+        animation: highlightPulse 1.5s ease-in-out infinite;
+      }
+
+      .highlight-glow {
+        box-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
+        transform: scale(1.05);
+      }
+
+      @keyframes highlightPulse {
+        0%,
+        100% {
+          box-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+          transform: scale(1);
+        }
+        50% {
+          box-shadow: 0 0 20px rgba(255, 255, 255, 1);
+          transform: scale(1.02);
+        }
+      }
+
+      .viz-split-bar.highlight {
+        animation: barHighlight 1.5s ease-in-out infinite;
+      }
+
+      @keyframes barHighlight {
+        0%,
+        100% {
+          background: rgba(255, 255, 255, 0.95);
+          box-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+        }
+        50% {
+          background: rgba(255, 255, 255, 1);
+          box-shadow: 0 0 15px rgba(255, 255, 255, 0.9);
+        }
+      }
+
+      /* Glassmorphic button styles */
+      .btn-glass {
+        background: linear-gradient(
+          135deg,
+          rgba(59, 130, 246, 0.1),
+          rgba(37, 99, 235, 0.2)
+        );
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        color: #1e40af;
+        border-radius: 12px;
+        padding: 10px 20px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      .btn-glass:hover {
+        background: linear-gradient(
+          135deg,
+          rgba(59, 130, 246, 0.2),
+          rgba(37, 99, 235, 0.3)
+        );
+        transform: translateY(-1px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        border-color: rgba(59, 130, 246, 0.4);
+      }
+
+      .btn-danger-glass {
+        background: rgba(239, 68, 68, 0.2);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        color: white;
+        border-radius: 8px;
+        padding: 4px 8px;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .btn-danger-glass:hover {
+        background: rgba(239, 68, 68, 0.3);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-container">
+      <!-- Controls Panel -->
+      <div class="controls-panel">
+        <!-- Header Info Section -->
+        <div class="section">
+          <h2 class="section-title">Race Information</h2>
+
+          <div class="form-group">
+            <label class="form-label" for="title">Title</label>
+            <input
+              type="text"
+              id="title"
+              class="form-input"
+              value="5K Time Trial"
+              placeholder="e.g., 5K Time Trial"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="subtitle">Subtitle</label>
+            <input
+              type="text"
+              id="subtitle"
+              class="form-input"
+              value="Kezar Stadium Track"
+              placeholder="e.g., Kezar Stadium Track"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="type">Type</label>
+            <input
+              type="text"
+              id="type"
+              class="form-input"
+              value="Race"
+              placeholder="e.g., Race, Time Trial, Workout"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="progress-label"
+              >Progress Label</label
+            >
+            <input
+              type="text"
+              id="progress-label"
+              class="form-input"
+              value="Week 4/4"
+              placeholder="e.g., Week 4/4, Day 1, Session 3"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="final-time">Final Time</label>
+            <input
+              type="text"
+              id="final-time"
+              class="form-input"
+              value="23:33"
+              placeholder="e.g., 23:33"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="avg-pace">Average Pace</label>
+            <input
+              type="text"
+              id="avg-pace"
+              class="form-input"
+              value="4:43/km"
+              placeholder="e.g., 4:43/km"
+            />
+          </div>
+
+          <div class="form-group color-picker-group">
+            <label class="form-label">Background Color</label>
+            <div class="color-picker" id="color-picker">
+              <div
+                class="color-option active"
+                data-color="red"
+                style="
+                  background: linear-gradient(135deg, #f87171 0%, #dc2626 100%);
+                "
+              ></div>
+              <div
+                class="color-option"
+                data-color="green"
+                style="
+                  background: linear-gradient(135deg, #34d399 0%, #059669 100%);
+                "
+              ></div>
+              <div
+                class="color-option"
+                data-color="blue"
+                style="
+                  background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%);
+                "
+              ></div>
+              <div
+                class="color-option"
+                data-color="orange"
+                style="
+                  background: linear-gradient(135deg, #fb923c 0%, #ea580c 100%);
+                "
+              ></div>
+              <div
+                class="color-option"
+                data-color="purple"
+                style="
+                  background: linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%);
+                "
+              ></div>
+              <div
+                class="color-option"
+                data-color="pink"
+                style="
+                  background: linear-gradient(135deg, #f472b6 0%, #ec4899 100%);
+                "
+              ></div>
+              <div class="color-separator"></div>
+              <div class="color-option custom-option" id="custom-option">
+                <input
+                  type="color"
+                  id="custom-color-input"
+                  value="#dc2626"
+                  style="opacity: 0; position: absolute; pointer-events: none"
+                />
+                <input
+                  type="file"
+                  id="image-background-input"
+                  accept="image/*"
+                  style="opacity: 0; position: absolute; pointer-events: none"
+                />
+                <div class="custom-color-icon">+</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Splits Data Section -->
+        <div class="section">
+          <h2 class="section-title">Cumulative Times</h2>
+
+          <table class="splits-table" id="splits-table">
+            <thead>
+              <tr>
+                <th>Distance</th>
+                <th>Cumulative Time</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="splits-tbody">
+              <!-- Table rows will be generated by JavaScript -->
+            </tbody>
+          </table>
+
+          <div class="form-group">
+            <label class="form-label" for="preset-selector"
+              >Load Preset Data</label
+            >
+            <select
+              id="preset-selector"
+              class="form-input"
+              onchange="loadPresetData()"
+            >
+              <option value="">-- Select Preset --</option>
+              <optgroup label="5K & 10K">
+                <option value="5k-wr">5000m (per 400m splits)</option>
+                <option value="5k-splits">5K (per km splits)</option>
+                <option value="10k-splits">10K (per km splits)</option>
+              </optgroup>
+              <optgroup label="Marathon & Half">
+                <option value="marathon">Marathon</option>
+                <option value="half-marathon">Half Marathon</option>
+                <option value="half-marathon-km">Half Marathon (per km)</option>
+                <option value="marathon-km">Marathon (per km)</option>
+                <option value="marathon-sf">SF Marathon</option>
+              </optgroup>
+            </select>
+          </div>
+
+          <div class="btn-group">
+            <button class="btn btn-primary" onclick="addSplitRow()">
+              Add Split
+            </button>
+            <button class="btn btn-danger" onclick="clearAllSplits()">
+              Clear All
+            </button>
+          </div>
+        </div>
+
+        <!-- Advanced Section -->
+        <div class="section">
+          <h2 class="section-title">Advanced</h2>
+
+          <div id="settings-panel">
+            <div class="form-group">
+              <label class="form-label">
+                <input
+                  type="checkbox"
+                  id="proportional-widths"
+                  onchange="updateVisualization()"
+                  style="margin-right: 8px"
+                  checked
+                />
+                Proportional bar widths
+              </label>
+              <div style="font-size: 12px; color: #6b7280; margin-top: 4px">
+                Make bar width proportional to split distance (e.g., 5k split =
+                half width of 10k)
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">
+                <input
+                  type="checkbox"
+                  id="show-split-numbers"
+                  onchange="updateVisualization()"
+                  style="margin-right: 8px"
+                />
+                Show split numbers
+              </label>
+              <div style="font-size: 12px; color: #6b7280; margin-top: 4px">
+                Display numbers below each bar
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Custom Dropdown (positioned outside controls panel) -->
+      <div
+        id="custom-dropdown"
+        style="
+          display: none;
+          position: fixed;
+          background: white;
+          border: 1px solid #d1d5db;
+          border-radius: 8px;
+          padding: 8px;
+          box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+          z-index: 9999;
+          min-width: 120px;
+        "
+      >
+        <button
+          class="btn-glass"
+          onclick="selectCustomColor()"
+          style="
+            width: 100%;
+            margin-bottom: 4px;
+            font-size: 12px;
+            padding: 6px;
+          "
+        >
+          Pick Color
+        </button>
+        <button
+          class="btn-glass"
+          onclick="selectImageBackground()"
+          style="width: 100%; font-size: 12px; padding: 6px"
+        >
+          Select Image
+        </button>
+      </div>
+
+      <!-- Preview Panel -->
+      <div class="preview-panel">
+        <div class="viz-container" id="viz-container">
+          <div class="viz-card">
+            <div class="viz-header-section">
+              <div class="viz-title-group">
+                <div class="viz-title" id="viz-title">5K Time Trial</div>
+                <div class="viz-subtitle" id="viz-subtitle">
+                  Kezar Stadium Track
+                </div>
+              </div>
+              <div class="viz-badge" id="viz-badge">Race</div>
+            </div>
+
+            <div class="viz-progress-section">
+              <div class="viz-progress-bar">
+                <div class="viz-progress-fill"></div>
+              </div>
+              <div class="viz-week-label" id="viz-progress-label">Week 4/4</div>
+            </div>
+
+            <div class="viz-splits-container" id="viz-splits-container">
+              <!-- Bars will be generated by JavaScript -->
+            </div>
+
+            <div class="viz-stats" id="viz-stats">
+              <div class="viz-stat-item" id="viz-time-container">
+                <div class="viz-stat-value" id="viz-time">23:33</div>
+                <div class="viz-gray">Time</div>
+              </div>
+              <div class="viz-stat-item" id="viz-pace-container">
+                <div class="viz-stat-value" id="viz-pace">4:43/km</div>
+                <div class="viz-gray">Pace</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Export Button -->
+        <div style="margin-top: 20px; text-align: center">
+          <button
+            class="btn-glass"
+            onclick="exportToPNG()"
+            style="font-size: 16px; padding: 12px 24px"
+          >
+            Export PNG
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fullscreen Modal -->
+    <div class="fullscreen-modal" id="fullscreen-modal">
+      <button class="fullscreen-close" onclick="closeFullscreen()">
+        &times;
+      </button>
+      <div class="fullscreen-viz" id="fullscreen-viz">
+        <!-- Visualization will be cloned here -->
+      </div>
+      <div class="fullscreen-instructions">
+        Right-click and "Save image as..." or use ⌘+Shift+4 (Mac) / Alt+Print
+        Screen (Windows) to capture
+      </div>
+    </div>
+
+    <script>
+      let splitCounter = 0
+
+      // Initialize with marathon data
+      function initializeApp() {
+        loadMarathonData()
+        updateVisualization()
+
+        // Add event listeners for real-time updates and highlighting
+        setupInputListeners()
+      }
+
+      function setupInputListeners() {
+        // Header inputs with highlighting
+        setupHeaderInputListener('title', 'viz-title')
+        setupHeaderInputListener('subtitle', 'viz-subtitle')
+        setupHeaderInputListener('type', 'viz-badge')
+        setupHeaderInputListener('final-time', 'viz-time')
+        setupHeaderInputListener('avg-pace', 'viz-pace')
+        setupHeaderInputListener('progress-label', 'viz-progress-label')
+
+        // Color picker
+        setupColorPicker()
+      }
+
+      function setupColorPicker() {
+        const colorOptions = document.querySelectorAll(
+          '.color-option:not(.custom-option)'
+        )
+        const customOption = document.getElementById('custom-option')
+        const customDropdown = document.getElementById('custom-dropdown')
+        const customColorInput = document.getElementById('custom-color-input')
+        const imageBackgroundInput = document.getElementById(
+          'image-background-input'
+        )
+
+        // Handle preset color options
+        colorOptions.forEach(option => {
+          option.addEventListener('click', () => {
+            // Remove active class from all options
+            document
+              .querySelectorAll('.color-option')
+              .forEach(opt => opt.classList.remove('active'))
+
+            // Add active class to clicked option
+            option.classList.add('active')
+
+            // Hide dropdown
+            customDropdown.style.display = 'none'
+
+            // Update theme
+            updateTheme(option.dataset.color)
+          })
+        })
+
+        // Handle custom option click - show dropdown
+        customOption.addEventListener('click', e => {
+          e.stopPropagation()
+          const isVisible = customDropdown.style.display === 'block'
+          
+          if (isVisible) {
+            customDropdown.style.display = 'none'
+          } else {
+            // Position dropdown below the custom option
+            const rect = customOption.getBoundingClientRect()
+            customDropdown.style.top = `${rect.bottom + 5}px`
+            customDropdown.style.left = `${rect.left}px`
+            customDropdown.style.display = 'block'
+          }
+        })
+
+        // Handle color changes (both dragging and final selection)
+        const handleColorChange = e => {
+          const selectedColor = e.target.value
+
+          // Remove active class from all options
+          document
+            .querySelectorAll('.color-option')
+            .forEach(opt => opt.classList.remove('active'))
+
+          // Add active class to custom option
+          customOption.classList.add('active')
+
+          // Update the custom option background to show selected color
+          customOption.style.background = selectedColor
+
+          // Hide dropdown
+          customDropdown.style.display = 'none'
+
+          // Create custom gradient from the selected color
+          updateCustomTheme(selectedColor)
+        }
+
+        // Listen to both 'input' (real-time dragging) and 'change' (final selection)
+        customColorInput.addEventListener('input', handleColorChange)
+        customColorInput.addEventListener('change', handleColorChange)
+
+        // Handle image background
+        imageBackgroundInput.addEventListener('change', e => {
+          const file = e.target.files[0]
+          if (file && file.type.startsWith('image/')) {
+            const reader = new FileReader()
+            reader.onload = e => {
+              const imageUrl = e.target.result
+
+              // Remove active class from all options
+              document
+                .querySelectorAll('.color-option')
+                .forEach(opt => opt.classList.remove('active'))
+
+              // Add active class to custom option
+              customOption.classList.add('active')
+
+              // Update the custom option background to show selected image
+              customOption.style.background = `url(${imageUrl}) center/cover`
+
+              // Hide dropdown
+              customDropdown.style.display = 'none'
+
+              // Apply image background to visualization
+              updateImageBackground(imageUrl)
+            }
+            reader.readAsDataURL(file)
+          }
+        })
+
+        // Prevent dropdown from closing when clicking inside it
+        customDropdown.addEventListener('click', e => {
+          e.stopPropagation()
+        })
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', e => {
+          if (!customOption.contains(e.target) && !customDropdown.contains(e.target)) {
+            customDropdown.style.display = 'none'
+          }
+        })
+      }
+
+      function selectCustomColor() {
+        document.getElementById('custom-color-input').click()
+        document.getElementById('custom-dropdown').style.display = 'none'
+      }
+
+      function selectImageBackground() {
+        document.getElementById('image-background-input').click()
+        document.getElementById('custom-dropdown').style.display = 'none'
+      }
+
+      function setupHeaderInputListener(inputId, targetId) {
+        const input = document.getElementById(inputId)
+        const target = document.getElementById(targetId)
+
+        input.addEventListener('input', updateVisualization)
+
+        input.addEventListener('focus', () => {
+          target.classList.add('highlight-pulse')
+        })
+
+        input.addEventListener('blur', () => {
+          target.classList.remove('highlight-pulse')
+        })
+      }
+
+      function setupSplitRowListeners(row, rowIndex) {
+        const inputs = row.querySelectorAll('input')
+
+        inputs.forEach((input, inputIndex) => {
+          input.addEventListener('input', updateVisualization)
+
+          input.addEventListener('focus', () => {
+            // Highlight the corresponding bar
+            const bars = document.querySelectorAll('.viz-split-bar')
+            if (bars[rowIndex]) {
+              bars[rowIndex].classList.add('highlight')
+            }
+
+            // If it's the distance input (index 0), also highlight proportional width setting
+            if (inputIndex === 0) {
+              const proportionalCheckbox = document.getElementById(
+                'proportional-widths'
+              )
+              if (proportionalCheckbox) {
+                proportionalCheckbox.closest('.form-group').style.background =
+                  'rgba(59, 130, 246, 0.1)'
+              }
+            }
+          })
+
+          input.addEventListener('blur', () => {
+            // Remove bar highlight
+            const bars = document.querySelectorAll('.viz-split-bar')
+            if (bars[rowIndex]) {
+              bars[rowIndex].classList.remove('highlight')
+            }
+
+            // Remove setting highlight
+            if (inputIndex === 0) {
+              const proportionalCheckbox = document.getElementById(
+                'proportional-widths'
+              )
+              if (proportionalCheckbox) {
+                proportionalCheckbox.closest('.form-group').style.background =
+                  ''
+              }
+            }
+          })
+        })
+      }
+
+      function addSplitRow(distance = '', time = '') {
+        splitCounter++
+        const tbody = document.getElementById('splits-tbody')
+        const row = document.createElement('tr')
+
+        if (!distance) {
+          distance = `${splitCounter * 400}m`
+        }
+
+        row.innerHTML = `
+                <td><input type="text" value="${distance}" placeholder="10k, 400m"></td>
+                <td><input type="text" value="${time}" placeholder="32:44, 1:30"></td>
+                <td><button class="btn-danger-glass" onclick="removeSplitRow(this)">×</button></td>
+            `
+
+        tbody.appendChild(row)
+
+        // Set up listeners for the new row
+        const rowIndex = tbody.children.length - 1
+        setupSplitRowListeners(row, rowIndex)
+
+        updateVisualization()
+      }
+
+      function removeSplitRow(button) {
+        const row = button.closest('tr')
+        row.remove()
+        updateVisualization()
+      }
+
+      function loadSampleData() {
+        // Clear existing rows
+        document.getElementById('splits-tbody').innerHTML = ''
+        splitCounter = 0
+
+        // Joshua Cheptegei Monaco WR 5000m splits (cumulative times)
+        const sampleData = [
+          ['400m', '1:00.70'],
+          ['800m', '2:02.40'],
+          ['1200m', '3:03.04'],
+          ['1600m', '4:03.45'],
+          ['2000m', '5:04.70'],
+          ['2400m', '6:05.61'],
+          ['2800m', '7:05.64'],
+          ['3200m', '8:05.74'],
+          ['3600m', '9:05.92'],
+          ['4000m', '10:06.25'],
+          ['4400m', '11:06.22'],
+          ['4800m', '12:05.86'],
+          ['5000m', '12:35.36']
+        ]
+
+        // Update header for 5K WR
+        document.getElementById('title').value = 'Joshua Cheptegei 5000m'
+        document.getElementById('subtitle').value = 'Monaco WR'
+        document.getElementById('final-time').value = '12:35.36'
+        document.getElementById('avg-pace').value = '2:31/km'
+        document.getElementById('progress-label').value = 'World Record'
+
+        sampleData.forEach(([distance, time]) => {
+          addSplitRow(distance, time)
+        })
+
+        // Re-setup listeners for all rows after loading sample data
+        setTimeout(() => {
+          const rows = document.querySelectorAll('#splits-tbody tr')
+          rows.forEach((row, index) => {
+            setupSplitRowListeners(row, index)
+          })
+        }, 100)
+      }
+
+      function loadMarathonData() {
+        // Clear existing rows
+        document.getElementById('splits-tbody').innerHTML = ''
+        splitCounter = 0
+
+        // Sample marathon data
+        const marathonData = [
+          ['10k', '00:32:44'],
+          ['21.1k', '01:07:55'],
+          ['30k', '01:35:41'],
+          ['40k', '02:07:26'],
+          ['42.2k', '02:14:33']
+        ]
+
+        // Update header for marathon
+        document.getElementById('title').value = 'Vancouver Marathon'
+        document.getElementById('subtitle').value = '2025'
+        document.getElementById('final-time').value = '02:14:33'
+        document.getElementById('avg-pace').value = '3:11.4/km'
+        document.getElementById('progress-label').value = 'Sub-2:10 Attempt 3'
+
+        marathonData.forEach(([distance, time]) => {
+          addSplitRow(distance, time)
+        })
+
+        // Re-setup listeners for all rows after loading sample data
+        setTimeout(() => {
+          const rows = document.querySelectorAll('#splits-tbody tr')
+          rows.forEach((row, index) => {
+            setupSplitRowListeners(row, index)
+          })
+        }, 100)
+      }
+
+      function clearAllSplits() {
+        document.getElementById('splits-tbody').innerHTML = ''
+        splitCounter = 0
+        updateVisualization()
+      }
+
+      function loadPresetData() {
+        const selector = document.getElementById('preset-selector')
+        const selectedValue = selector.value
+
+        if (!selectedValue) return
+
+        // Clear existing rows
+        document.getElementById('splits-tbody').innerHTML = ''
+        splitCounter = 0
+
+        const presets = {
+          '5k-wr': {
+            title: '5000m World Record',
+            subtitle: 'Monaco 2020',
+            type: 'World Record',
+            progressLabel: 'Attempt 1/1',
+            finalTime: '12:35.36',
+            avgPace: '2:31/km',
+            color: 'purple',
+            splits: [
+              ['400m', '1:00.70'],
+              ['800m', '2:02.40'],
+              ['1200m', '3:03.04'],
+              ['1600m', '4:03.45'],
+              ['2000m', '5:04.70'],
+              ['2400m', '6:05.61'],
+              ['2800m', '7:05.64'],
+              ['3200m', '8:05.74'],
+              ['3600m', '9:05.92'],
+              ['4000m', '10:06.25'],
+              ['4400m', '11:06.22'],
+              ['4800m', '12:05.86'],
+              ['5000m', '12:35.36']
+            ]
+          },
+          '5k-splits': {
+            title: '5000m Race',
+            subtitle: 'Per Kilometer Splits',
+            type: 'Race',
+            progressLabel: 'Personal Best',
+            finalTime: '15:30',
+            avgPace: '3:06/km',
+            color: 'green',
+            splits: [
+              ['1k', '3:00'],
+              ['2k', '6:10'],
+              ['3k', '9:20'],
+              ['4k', '12:30'],
+              ['5k', '15:30']
+            ]
+          },
+          '10k-splits': {
+            title: '10000m Race',
+            subtitle: 'Per Kilometer Splits',
+            type: 'Race',
+            progressLabel: 'Season Best',
+            finalTime: '32:15',
+            avgPace: '3:13/km',
+            color: 'blue',
+            splits: [
+              ['1k', '3:10'],
+              ['2k', '6:25'],
+              ['3k', '9:40'],
+              ['4k', '12:55'],
+              ['5k', '16:10'],
+              ['6k', '19:25'],
+              ['7k', '22:45'],
+              ['8k', '26:05'],
+              ['9k', '29:25'],
+              ['10k', '32:15']
+            ]
+          },
+          marathon: {
+            title: 'Marathon',
+            subtitle: 'Race Day',
+            type: 'Marathon',
+            progressLabel: 'Sub-2:10 Attempt 3',
+            finalTime: '02:14:33',
+            avgPace: '3:11.4/km',
+            color: 'red',
+            splits: [
+              ['10k', '00:32:44'],
+              ['21.1k', '01:07:55'],
+              ['30k', '01:35:41'],
+              ['40k', '02:07:26'],
+              ['42.2k', '02:14:33']
+            ]
+          },
+          'half-marathon': {
+            title: 'Half Marathon',
+            subtitle: 'Spring 2025',
+            type: 'Half Marathon',
+            progressLabel: 'Goal Race',
+            finalTime: '01:15:30',
+            avgPace: '3:34/km',
+            color: 'pink',
+            splits: [
+              ['5k', '17:45'],
+              ['10k', '35:30'],
+              ['15k', '53:45'],
+              ['20k', '01:11:30'],
+              ['21.1k', '01:15:30']
+            ]
+          },
+          'half-marathon-km': {
+            title: 'Half Marathon',
+            subtitle: 'Per Kilometer Splits',
+            type: 'Half Marathon',
+            progressLabel: 'Sub-1:15 Attempt',
+            finalTime: '01:14:36',
+            avgPace: '3:32/km',
+            color: 'pink',
+            splits: [
+              ['1k', '3:28'],
+              ['2k', '7:02'],
+              ['3k', '10:34'],
+              ['4k', '14:08'],
+              ['5k', '17:40'],
+              ['6k', '21:14'],
+              ['7k', '24:46'],
+              ['8k', '28:20'],
+              ['9k', '31:52'],
+              ['10k', '35:26'],
+              ['11k', '38:58'],
+              ['12k', '42:32'],
+              ['13k', '46:04'],
+              ['14k', '49:38'],
+              ['15k', '53:10'],
+              ['16k', '56:44'],
+              ['17k', '01:00:16'],
+              ['18k', '01:03:50'],
+              ['19k', '01:07:22'],
+              ['20k', '01:10:56'],
+              ['21k', '01:14:28'],
+              ['21.1k', '01:14:36']
+            ]
+          },
+          'marathon-km': {
+            title: 'Marathon',
+            subtitle: 'Per Kilometer Splits',
+            type: 'Marathon',
+            progressLabel: 'Sub-2:10 Attempt',
+            finalTime: '02:09:12',
+            avgPace: '3:04/km',
+            color: 'red',
+            splits: [
+              ['1k', '3:02'],
+              ['2k', '6:06'],
+              ['3k', '9:08'],
+              ['4k', '12:12'],
+              ['5k', '15:14'],
+              ['6k', '18:18'],
+              ['7k', '21:20'],
+              ['8k', '24:24'],
+              ['9k', '27:26'],
+              ['10k', '30:30'],
+              ['11k', '33:32'],
+              ['12k', '36:36'],
+              ['13k', '39:38'],
+              ['14k', '42:42'],
+              ['15k', '45:44'],
+              ['16k', '48:48'],
+              ['17k', '51:50'],
+              ['18k', '54:54'],
+              ['19k', '57:56'],
+              ['20k', '01:01:00'],
+              ['21k', '01:04:02'],
+              ['22k', '01:07:06'],
+              ['23k', '01:10:08'],
+              ['24k', '01:13:12'],
+              ['25k', '01:16:14'],
+              ['26k', '01:19:18'],
+              ['27k', '01:22:20'],
+              ['28k', '01:25:24'],
+              ['29k', '01:28:26'],
+              ['30k', '01:31:30'],
+              ['31k', '01:34:34'],
+              ['32k', '01:37:38'],
+              ['33k', '01:40:42'],
+              ['34k', '01:43:46'],
+              ['35k', '01:46:50'],
+              ['36k', '01:49:54'],
+              ['37k', '01:52:58'],
+              ['38k', '01:56:02'],
+              ['39k', '01:59:06'],
+              ['40k', '02:02:10'],
+              ['41k', '02:05:16'],
+              ['42k', '02:08:22'],
+              ['42.2k', '02:09:12']
+            ]
+          },
+          'marathon-sf': {
+            title: 'SF Marathon',
+            subtitle: 'July 2024',
+            type: 'Marathon',
+            progressLabel: 'Hilly Challenge',
+            finalTime: '02:31:42',
+            avgPace: '5:47/mi',
+            color: 'orange',
+            splits: [
+              ['2.2mi', '11:44'],
+              ['5.7mi', '34:27'],
+              ['6.43mi', '40:37'],
+              ['10.92mi', '01:05:42'],
+              ['11.42mi', '01:09:22'],
+              ['14.95mi', '01:28:12'],
+              ['18mi', '01:47:05'],
+              ['24mi', '02:19:32'],
+              ['26.2mi', '02:31:42']
+            ]
+          }
+        }
+
+        const preset = presets[selectedValue]
+        if (!preset) return
+
+        // Update form fields
+        document.getElementById('title').value = preset.title
+        document.getElementById('subtitle').value = preset.subtitle
+        document.getElementById('type').value = preset.type
+        document.getElementById('progress-label').value = preset.progressLabel
+        document.getElementById('final-time').value = preset.finalTime
+        document.getElementById('avg-pace').value = preset.avgPace
+
+        // Update color theme
+        if (preset.color) {
+          // Remove active class from all color options
+          document
+            .querySelectorAll('.color-option')
+            .forEach(opt => opt.classList.remove('active'))
+
+          // Find and activate the preset color
+          const colorOption = document.querySelector(
+            `[data-color="${preset.color}"]`
+          )
+          if (colorOption) {
+            colorOption.classList.add('active')
+            updateTheme(preset.color)
+          }
+        }
+
+        // Load splits data
+        preset.splits.forEach(([distance, time]) => {
+          addSplitRow(distance, time)
+        })
+
+        // Reset selector to default
+        selector.value = ''
+
+        // Re-setup listeners for all rows after loading preset data
+        setTimeout(() => {
+          const rows = document.querySelectorAll('#splits-tbody tr')
+          rows.forEach((row, index) => {
+            setupSplitRowListeners(row, index)
+          })
+        }, 100)
+      }
+
+      function updateVisualization() {
+        // Update header info
+        document.getElementById('viz-title').textContent =
+          document.getElementById('title').value
+        document.getElementById('viz-subtitle').textContent =
+          document.getElementById('subtitle').value
+        document.getElementById('viz-badge').textContent =
+          document.getElementById('type').value
+        document.getElementById('viz-progress-label').textContent =
+          document.getElementById('progress-label').value
+
+        // Update stats with conditional display
+        const finalTime = document.getElementById('final-time').value.trim()
+        const avgPace = document.getElementById('avg-pace').value.trim()
+
+        const timeContainer = document.getElementById('viz-time-container')
+        const paceContainer = document.getElementById('viz-pace-container')
+        const statsContainer = document.getElementById('viz-stats')
+
+        // Show/hide time stat
+        if (finalTime) {
+          document.getElementById('viz-time').textContent = finalTime
+          timeContainer.style.display = 'block'
+        } else {
+          timeContainer.style.display = 'none'
+        }
+
+        // Show/hide pace stat
+        if (avgPace) {
+          document.getElementById('viz-pace').textContent = avgPace
+          paceContainer.style.display = 'block'
+        } else {
+          paceContainer.style.display = 'none'
+        }
+
+        // Hide entire stats section if both are empty
+        if (!finalTime && !avgPace) {
+          statsContainer.style.display = 'none'
+        } else {
+          statsContainer.style.display = 'flex'
+        }
+
+        // Update bars
+        updateSplitBars()
+      }
+
+      function updateSplitBars() {
+        const container = document.getElementById('viz-splits-container')
+        container.innerHTML = ''
+
+        // Get all split data
+        const rows = document.querySelectorAll('#splits-tbody tr')
+        const splitData = []
+
+        rows.forEach(row => {
+          const inputs = row.querySelectorAll('input')
+          const distance = inputs[0].value
+          const time = inputs[1].value
+
+          if (distance && time) {
+            splitData.push({ distance, time })
+          }
+        })
+
+        if (splitData.length === 0) return
+
+        // Calculate bar heights (function now handles all the logic internally)
+        const barHeights = calculateBarHeights(splitData)
+
+        // Get settings
+        const proportionalWidths = document.getElementById(
+          'proportional-widths'
+        ).checked
+        const showSplitNumbers =
+          document.getElementById('show-split-numbers').checked
+
+        // Get split distances for proportional widths
+        const { splitDistances } = calculateSplitData(splitData)
+        const maxDistance = Math.max(...splitDistances)
+
+        // Calculate total available width (container width minus gaps)
+        const containerWidth = container.offsetWidth
+        const numBars = barHeights.length
+        const gapSize = 2 // 2px gap between bars
+        const totalGapWidth = (numBars - 1) * gapSize
+        const availableWidth = containerWidth - totalGapWidth
+
+        // Calculate bar widths to fill the full container width
+        let barWidths = []
+        if (proportionalWidths && splitDistances.length > 0) {
+          // Proportional widths based on split distances
+          const totalDistance = splitDistances.reduce(
+            (sum, dist) => sum + dist,
+            0
+          )
+          barWidths = splitDistances.map(
+            dist => Math.max((dist / totalDistance) * availableWidth, 8) // Minimum 8px width
+          )
+        } else {
+          // Equal widths
+          const equalWidth = availableWidth / numBars
+          barWidths = Array(numBars).fill(Math.max(equalWidth, 8))
+        }
+
+        // Create bars
+        barHeights.forEach((height, index) => {
+          const bar = document.createElement('div')
+          bar.className = 'viz-split-bar'
+          bar.style.height = `${height}px`
+          bar.style.width = `${barWidths[index]}px`
+
+          // Add split number if enabled
+          if (showSplitNumbers) {
+            const splitNumber = document.createElement('div')
+            splitNumber.className = 'viz-split-number'
+            splitNumber.textContent = `${index + 1}`
+            bar.appendChild(splitNumber)
+          }
+
+          container.appendChild(bar)
+        })
+      }
+
+      function extractDistance(distanceStr) {
+        // Extract numeric value and convert to meters
+        // Supports: "400m", "10k", "21.1k", "42.2k", "5.7mi", "26.2 miles", etc.
+
+        // Check for miles first
+        const miMatch = distanceStr.match(/([\d.]+)\s*mi/i)
+        if (miMatch) {
+          return parseFloat(miMatch[1]) * 1609.34 // Convert miles to meters
+        }
+
+        // Check for kilometers
+        const kmMatch = distanceStr.match(/([\d.]+)k/i)
+        if (kmMatch) {
+          return parseFloat(kmMatch[1]) * 1000 // Convert km to meters
+        }
+
+        // Default to meters
+        const mMatch = distanceStr.match(/([\d.]+)m?/i)
+        return mMatch ? parseInt(mMatch[1]) : 0
+      }
+
+      function calculateSplitData(splitData) {
+        const splitTimes = []
+        const splitDistances = []
+        let previousTime = 0
+        let previousDistance = 0
+
+        splitData.forEach(split => {
+          const currentTime = timeToSeconds(split.time)
+          const currentDistance = extractDistance(split.distance)
+
+          const splitTime = currentTime - previousTime
+          const splitDistance = currentDistance - previousDistance
+
+          splitTimes.push(splitTime)
+          splitDistances.push(splitDistance)
+
+          previousTime = currentTime
+          previousDistance = currentDistance
+        })
+
+        return { splitTimes, splitDistances }
+      }
+
+      function normalizeToPacePerKm(splitTime, splitDistanceMeters) {
+        // Convert split time to pace per km
+        if (splitDistanceMeters === 0) return 0
+        const distanceKm = splitDistanceMeters / 1000
+        return splitTime / distanceKm
+      }
+
+      function calculateBarHeights(splitTimes) {
+        if (splitTimes.length === 0) return []
+
+        // Get split data to calculate actual split distances
+        const rows = document.querySelectorAll('#splits-tbody tr')
+        const splitData = []
+
+        rows.forEach(row => {
+          const inputs = row.querySelectorAll('input')
+          const distance = inputs[0].value
+          const time = inputs[1].value
+
+          if (distance && time) {
+            splitData.push({ distance, time })
+          }
+        })
+
+        const { splitTimes: calculatedSplitTimes, splitDistances } =
+          calculateSplitData(splitData)
+        const normalizedPaces = []
+
+        // Calculate normalized pace per km for each split
+        calculatedSplitTimes.forEach((splitTime, index) => {
+          const splitDistance = splitDistances[index]
+          const pacePerKm = normalizeToPacePerKm(splitTime, splitDistance)
+          normalizedPaces.push(pacePerKm)
+        })
+
+        if (normalizedPaces.length === 0) return []
+
+        const minPace = Math.min(...normalizedPaces)
+        const maxPace = Math.max(...normalizedPaces)
+        const range = maxPace - minPace
+
+        return normalizedPaces.map(pace => {
+          if (range === 0) return 60 // All paces are the same
+
+          // Invert: faster (lower) pace gets higher bar
+          const normalized = (maxPace - pace) / range
+
+          // Use square root to reduce extreme differences
+          const dampened = Math.sqrt(normalized)
+          return 40 + dampened * 60 // 40-100px range with dampened scaling
+        })
+      }
+
+      function timeToSeconds(timeStr) {
+        if (!timeStr) return 0
+
+        const parts = timeStr.split(':')
+        if (parts.length === 3) {
+          // hh:mm:ss format
+          const hours = parseInt(parts[0]) || 0
+          const minutes = parseInt(parts[1]) || 0
+          const seconds = parseFloat(parts[2]) || 0
+          return hours * 3600 + minutes * 60 + seconds
+        } else if (parts.length === 2) {
+          // mm:ss format
+          const minutes = parseInt(parts[0]) || 0
+          const seconds = parseFloat(parts[1]) || 0
+          return minutes * 60 + seconds
+        }
+
+        return parseFloat(timeStr) || 0
+      }
+
+      function toggleSettings() {
+        const panel = document.getElementById('settings-panel')
+        panel.style.display = panel.style.display === 'none' ? 'block' : 'none'
+      }
+
+      function updateTheme(colorName) {
+        const container = document.getElementById('viz-container')
+
+        const themes = {
+          red: 'linear-gradient(135deg, #f87171 0%, #dc2626 100%)',
+          green: 'linear-gradient(135deg, #34d399 0%, #059669 100%)',
+          blue: 'linear-gradient(135deg, #60a5fa 0%, #2563eb 100%)',
+          orange: 'linear-gradient(135deg, #fb923c 0%, #ea580c 100%)',
+          purple: 'linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%)',
+          pink: 'linear-gradient(135deg, #f472b6 0%, #ec4899 100%)'
+        }
+
+        container.style.background = themes[colorName] || themes.red
+      }
+
+      function updateCustomTheme(hexColor) {
+        const container = document.getElementById('viz-container')
+
+        // Convert hex to lighter version for gradient
+        const lighterColor = lightenColor(hexColor, 20)
+
+        // Create gradient from lighter to darker version
+        const gradient = `linear-gradient(135deg, ${lighterColor} 0%, ${hexColor} 100%)`
+        container.style.background = gradient
+      }
+
+      function lightenColor(hex, percent) {
+        // Remove # if present
+        hex = hex.replace('#', '')
+
+        // Parse r, g, b values
+        const r = parseInt(hex.substr(0, 2), 16)
+        const g = parseInt(hex.substr(2, 2), 16)
+        const b = parseInt(hex.substr(4, 2), 16)
+
+        // Calculate lighter values
+        const newR = Math.min(255, Math.floor(r + (255 - r) * (percent / 100)))
+        const newG = Math.min(255, Math.floor(g + (255 - g) * (percent / 100)))
+        const newB = Math.min(255, Math.floor(b + (255 - b) * (percent / 100)))
+
+        // Convert back to hex
+        return `#${newR.toString(16).padStart(2, '0')}${newG.toString(16).padStart(2, '0')}${newB.toString(16).padStart(2, '0')}`
+      }
+
+      function updateImageBackground(imageUrl) {
+        const container = document.getElementById('viz-container')
+        // Apply image with overlay for better text readability
+        container.style.background = `
+          linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)),
+          url(${imageUrl})
+        `
+        container.style.backgroundSize = 'cover'
+        container.style.backgroundPosition = 'center'
+        container.style.backgroundRepeat = 'no-repeat'
+      }
+
+      function openFullscreen() {
+        const modal = document.getElementById('fullscreen-modal')
+        const fullscreenContainer = document.getElementById('fullscreen-viz')
+        const originalViz = document.getElementById('viz-container')
+
+        // Clone the visualization
+        const clonedViz = originalViz.cloneNode(true)
+        clonedViz.id = 'fullscreen-viz-content'
+
+        // Clear previous content and add cloned viz
+        fullscreenContainer.innerHTML = ''
+        fullscreenContainer.appendChild(clonedViz)
+
+        // Mark as fullscreen for updated bar rendering
+        window.isFullscreen = true
+
+        // Re-render bars with fullscreen sizing
+        updateSplitBarsForFullscreen(clonedViz)
+
+        // Show modal
+        modal.classList.add('active')
+
+        // Prevent body scroll
+        document.body.style.overflow = 'hidden'
+      }
+
+      function updateSplitBarsForFullscreen(clonedViz) {
+        const container = clonedViz.querySelector('.viz-splits-container')
+        if (!container) return
+
+        // Get current split data
+        const rows = document.querySelectorAll('#splits-tbody tr')
+        const splitData = []
+
+        rows.forEach(row => {
+          const inputs = row.querySelectorAll('input')
+          const distance = inputs[0].value
+          const time = inputs[1].value
+
+          if (distance && time) {
+            splitData.push({ distance, time })
+          }
+        })
+
+        if (splitData.length === 0) return
+
+        // Recalculate with fullscreen scaling
+        const barHeights = calculateBarHeights(splitData)
+        const proportionalWidths = document.getElementById(
+          'proportional-widths'
+        ).checked
+        const showSplitNumbers =
+          document.getElementById('show-split-numbers').checked
+
+        const { splitDistances } = calculateSplitData(splitData)
+        const maxDistance = Math.max(...splitDistances)
+
+        // Fullscreen scaling for bars
+        const numBars = barHeights.length
+        let dynamicBaseWidth
+        if (numBars <= 3) {
+          dynamicBaseWidth = 160 // 2x the normal wide size
+        } else if (numBars <= 6) {
+          dynamicBaseWidth = 120 // 2x the normal size
+        } else if (numBars <= 10) {
+          dynamicBaseWidth = 80 // 2x the normal size
+        } else {
+          dynamicBaseWidth = 50 // 2x the normal size
+        }
+
+        // Clear and rebuild bars
+        container.innerHTML = ''
+
+        // Ensure container has correct gap style for fullscreen
+        container.style.gap = '12px'
+        container.style.display = 'flex'
+        container.style.justifyContent = 'center'
+        container.style.alignItems = 'end'
+
+        barHeights.forEach((height, index) => {
+          const bar = document.createElement('div')
+          bar.className = 'viz-split-bar'
+          bar.style.height = `${height * 1.5}px` // Scale height for fullscreen
+
+          // Apply width (proportional or dynamic)
+          if (proportionalWidths && splitDistances[index]) {
+            const proportionalWidth =
+              (splitDistances[index] / maxDistance) * dynamicBaseWidth
+            bar.style.width = `${Math.max(proportionalWidth, 16)}px` // Minimum 16px width
+          } else {
+            bar.style.width = `${dynamicBaseWidth}px`
+          }
+
+          // Add split number if enabled
+          if (showSplitNumbers) {
+            const splitNumber = document.createElement('div')
+            splitNumber.className = 'viz-split-number'
+            splitNumber.textContent = `${index + 1}`
+            bar.appendChild(splitNumber)
+          }
+
+          container.appendChild(bar)
+        })
+      }
+
+      function closeFullscreen() {
+        const modal = document.getElementById('fullscreen-modal')
+        modal.classList.remove('active')
+
+        // Clear fullscreen flag
+        window.isFullscreen = false
+
+        // Restore body scroll
+        document.body.style.overflow = ''
+      }
+
+      function exportToPNG() {
+        const vizContainer = document.getElementById('viz-container')
+
+        // Show loading state
+        const button = event.target
+        const originalText = button.textContent
+        button.textContent = 'Exporting...'
+        button.disabled = true
+
+        html2canvas(vizContainer, {
+          backgroundColor: null,
+          scale: 2, // Higher resolution
+          useCORS: true,
+          allowTaint: false,
+          width: vizContainer.offsetWidth,
+          height: vizContainer.offsetHeight
+        })
+          .then(canvas => {
+            // Create download link
+            const link = document.createElement('a')
+            link.download = `${document.getElementById('title').value.replace(/\s+/g, '_').toLowerCase()}_splits.png`
+            link.href = canvas.toDataURL('image/png')
+
+            // Trigger download
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+
+            // Restore button state
+            button.textContent = originalText
+            button.disabled = false
+          })
+          .catch(error => {
+            console.error('Export failed:', error)
+            alert(
+              'Export failed. Please try again or use browser screenshot tools.'
+            )
+
+            // Restore button state
+            button.textContent = originalText
+            button.disabled = false
+          })
+      }
+
+      // Close fullscreen on escape key
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') {
+          closeFullscreen()
+        }
+      })
+
+      // Close fullscreen on background click
+      document
+        .getElementById('fullscreen-modal')
+        .addEventListener('click', e => {
+          if (e.target.id === 'fullscreen-modal') {
+            closeFullscreen()
+          }
+        })
+
+      // Initialize the app when page loads
+      document.addEventListener('DOMContentLoaded', initializeApp)
+    </script>
+  </body>
+</html>
