@@ -207,11 +207,12 @@
       /* Visualization Styles */
       .viz-container {
         background: linear-gradient(135deg, #f87171 0%, #dc2626 100%);
-        border-radius: 20px;
+        border-radius: 0px;
         padding: 40px;
         width: 600px;
         height: 400px;
         position: relative;
+        overflow: hidden;
       }
 
       .viz-card {
@@ -219,9 +220,11 @@
         backdrop-filter: blur(20px);
         border-radius: 16px;
         padding: 32px;
-        height: 100%;
+        height: calc(100% + 60px);
         border: 1px solid rgba(255, 255, 255, 0.2);
+        border-bottom: none;
         position: relative;
+        margin-bottom: -60px;
       }
 
       .viz-header-section {
@@ -465,10 +468,14 @@
       .fullscreen-viz .viz-container {
         width: 100%;
         height: 100%;
+        overflow: hidden;
       }
 
       .fullscreen-viz .viz-card {
         padding: 60px;
+        height: calc(100% + 60px);
+        margin-bottom: -60px;
+        border-bottom: none;
       }
 
       .fullscreen-viz .viz-title {
@@ -631,20 +638,22 @@
         background: rgba(239, 68, 68, 0.2);
         backdrop-filter: blur(10px);
         border: 1px solid rgba(239, 68, 68, 0.3);
-        color: white;
-        border-radius: 8px;
-        padding: 4px 8px;
-        font-size: 12px;
-        font-weight: 500;
+        color: #ef4444;
+        border-radius: 12px;
+        padding: 10px 20px;
+        font-size: 14px;
+        font-weight: 600;
         cursor: pointer;
         transition: all 0.3s ease;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
       }
 
       .btn-danger-glass:hover {
         background: rgba(239, 68, 68, 0.3);
+        color: white;
         transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        border-color: rgba(239, 68, 68, 0.4);
       }
     </style>
   </head>
@@ -832,10 +841,10 @@
           </div>
 
           <div class="btn-group">
-            <button class="btn btn-primary" onclick="addSplitRow()">
+            <button class="btn-glass" onclick="addSplitRow()">
               Add Split
             </button>
-            <button class="btn btn-danger" onclick="clearAllSplits()">
+            <button class="btn-danger-glass" onclick="clearAllSplits()">
               Clear All
             </button>
           </div>
@@ -1570,8 +1579,23 @@
           document.getElementById('subtitle').value
         document.getElementById('viz-badge').textContent =
           document.getElementById('type').value
-        document.getElementById('viz-progress-label').textContent =
-          document.getElementById('progress-label').value
+        const progressLabel = document.getElementById('progress-label').value
+        document.getElementById('viz-progress-label').textContent = progressLabel
+        
+        // Parse progress label for x/y format and update progress bar
+        const progressMatch = progressLabel.match(/(\d+)\/(\d+)/)
+        let progressPercentage = 100 // Default to 100% if no x/y format found
+        
+        if (progressMatch) {
+          const current = parseInt(progressMatch[1])
+          const total = parseInt(progressMatch[2])
+          if (total > 0 && current <= total) {
+            progressPercentage = (current / total) * 100
+          }
+        }
+        
+        // Update progress bar width
+        document.querySelector('.viz-progress-fill').style.width = `${progressPercentage}%`
 
         // Update stats with conditional display
         const finalTime = document.getElementById('final-time').value.trim()
@@ -1666,12 +1690,28 @@
           barWidths = Array(numBars).fill(Math.max(equalWidth, 8))
         }
 
+        // Calculate opacity range based on bar heights
+        const minHeight = Math.min(...barHeights)
+        const maxHeight = Math.max(...barHeights)
+        const heightRange = maxHeight - minHeight
+        
         // Create bars
         barHeights.forEach((height, index) => {
           const bar = document.createElement('div')
           bar.className = 'viz-split-bar'
           bar.style.height = `${height}px`
           bar.style.width = `${barWidths[index]}px`
+          
+          // Calculate opacity based on height (higher bars = higher opacity)
+          let opacity
+          if (heightRange === 0) {
+            opacity = 0.95 // All bars same height, use default opacity
+          } else {
+            // Map height to opacity range: 0.4 to 0.95
+            const normalizedHeight = (height - minHeight) / heightRange
+            opacity = 0.4 + (normalizedHeight * 0.55)
+          }
+          bar.style.background = `rgba(255, 255, 255, ${opacity})`
 
           // Add split number if enabled
           if (showSplitNumbers) {
@@ -1942,6 +1982,11 @@
         container.style.justifyContent = 'center'
         container.style.alignItems = 'end'
 
+        // Calculate opacity range based on bar heights
+        const minHeight = Math.min(...barHeights)
+        const maxHeight = Math.max(...barHeights)
+        const heightRange = maxHeight - minHeight
+
         barHeights.forEach((height, index) => {
           const bar = document.createElement('div')
           bar.className = 'viz-split-bar'
@@ -1955,6 +2000,17 @@
           } else {
             bar.style.width = `${dynamicBaseWidth}px`
           }
+
+          // Calculate opacity based on height (higher bars = higher opacity)
+          let opacity
+          if (heightRange === 0) {
+            opacity = 0.95 // All bars same height, use default opacity
+          } else {
+            // Map height to opacity range: 0.4 to 0.95
+            const normalizedHeight = (height - minHeight) / heightRange
+            opacity = 0.4 + (normalizedHeight * 0.55)
+          }
+          bar.style.background = `rgba(255, 255, 255, ${opacity})`
 
           // Add split number if enabled
           if (showSplitNumbers) {
